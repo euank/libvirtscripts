@@ -19,7 +19,7 @@ function image::update_coreos_image() {
 
   if [[ "${IMAGE_STORE_TYPE}" == "dir" ]]; then
     mkdir -p "${IMAGE_ROOT}/coreos"
-    IMAGE_FILE="${IMAGE_ROOT}/coreos/coreos_${channel}_${COREOS_VERSION}.img"
+    IMAGE_FILE="$(image::coreos_path "${channel}" "${COREOS_VERSION}")"
 
     if [[ -e "${IMAGE_FILE}" ]]; then
       echo "Image already exists: ${IMAGE_FILE}"
@@ -42,14 +42,20 @@ function image::latest_coreos_alpha() {
 
 function image::latest_coreos_alpha_path() {
   local alpha=$(image::latest_coreos_alpha)
-  echo "${IMAGE_ROOT}/coreos/${alpha}"
+  image::coreos_path "alpha" "$alpha"
 }
 
 function image::latest_coreos_stable() {
   kv::get "latest_coreos_stable"
 }
 
+function image::coreos_path() {
+  local channel=${1:?channel}
+  local version=${2:?version}
+  echo "${IMAGE_ROOT}coreos/coreos_${channel}_${version}.img"
+}
+
 function image::latest_coreos_stable_path() {
   local stable=$(image::latest_coreos_stable)
-  echo "${IMAGE_ROOT}/coreos/${stable}"
+  image::coreos_path "stable" "$stable"
 }
