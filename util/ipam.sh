@@ -16,6 +16,16 @@ function ipam::remove_taken() {
   sed -r -i "/\\s+${name}\$/d" taken.txt
 }
 
+function ipam::get_ip_by_name() {
+  name=${1:?Must have name arg}
+  ip=$(cat taken.txt | grep -E " ${name}$" | awk '{print $2}')
+  if [[ -z "${ip}" ]]; then
+    echo "No mapping found for ${mac}"
+    exit 1
+  fi
+  echo "$ip"
+}
+
 function ipam::get_ip() {
   mac=${1:?Must have mac arg}
   ip=$(cat map.txt | grep -E "^${mac}" | awk '{print $2}')
