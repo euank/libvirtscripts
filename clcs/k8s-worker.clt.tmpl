@@ -1,0 +1,293 @@
+# vim: et:ts=2
+storage:
+  files:
+  - filesystem: root
+    mode: 420
+    path: /etc/kubernetes/ssl/ca.pem
+    contents:
+      inline: |-
+{{ .k8sCa | indent 8}}
+  - filesystem: root
+    path: /etc/flannel/options.env
+    mode: 420
+    contents:
+      inline: |-
+        FLANNELD_IFACE={{ .internalIP }}
+        FLANNELD_ETCD_ENDPOINTS={{ .flannelEtcdEndpoints }}
+  - filesystem: root
+    path: /etc/kubernetes/cni/net.d/10-flannel.conf
+    mode: 420
+    contents:
+      inline: |-
+        {
+          "name": "cniflannel",
+          "type": "flannel",
+          "delegate": {
+            "isDefaultGateway": true
+          }
+        }
+  - filesystem: root
+    path: /etc/kubernetes/manifests/kube-proxy.yaml
+    mode: 420
+    contents:
+      inline: |-
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: kube-proxy
+          namespace: kube-system
+        spec:
+          hostNetwork: true
+          containers:
+          - name: kube-proxy
+            image: quay.io/coreos/hyperkube:v1.5.4_coreos.0
+            command:
+            - /hyperkube
+            - proxy
+            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
+            - --cluster-cidr=10.2.0.0/16
+            securityContext:
+              privileged: true
+            volumeMounts:
+              - mountPath: /etc/ssl/certs
+                name: "ssl-certs"
+              - mountPath: /etc/kubernetes/worker-kubeconfig.yaml
+                name: "kubeconfig"
+                readOnly: true
+              - mountPath: /etc/kubernetes/ssl
+                name: "etc-kube-ssl"
+                readOnly: true
+          volumes:
+            - name: "ssl-certs"
+              hostPath:
+                path: "/usr/share/ca-certificates"
+            - name: "kubeconfig"
+              hostPath:
+                path: "/etc/kubernetes/worker-kubeconfig.yaml"
+            - name: "etc-kube-ssl"
+              hostPath:
+                path: "/etc/kubernetes/ssl"
+  - filesystem: root
+    path: /etc/kubernetes/worker-bootstrap.yaml
+    mode: 420
+    contents:
+      inline: |-
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: kubernetes
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://k8s-master.internal.k8s.euank.com
+        users:
+        - name: kubelet
+          user:
+            token: {{ .bootstrapToken }}
+        contexts:
+        - context:
+            cluster: kubernetes
+            user: kubelet
+          name: kubelet-context
+        current-context: kubelet-context
+  - filesystem: root
+    path: /var/lib/iptables/rules-save
+    mode: 420
+    contents:
+      inline: |-
+        *filter
+        :INPUT DROP [0:0]
+        :FORWARD DROP [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -i eth1 -j ACCEPT
+        -A INPUT -i cni0 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 222 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 8448 -j ACCEPT
+        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+        -A FORWARD -i cni0 -j ACCEPT
+        -A FORWARD -o cni0 -j ACCEPT
+        COMMIT
+        # EOF
+  - filesystem: root
+    path: /var/lib/ip6tables/rules-save
+    mode: 420
+    contents:
+      inline: |-
+        *filter
+        :INPUT DROP [0:0]
+        :FORWARD DROP [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -i eth1 -j ACCEPT
+        -A INPUT -i cni0 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 222 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+        -A INPUT -p tcp -m tcp --dport 8448 -j ACCEPT
+        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        -A INPUT -p ipv6-icmp -j ACCEPT
+        -A FORWARD -i cni0 -j ACCEPT
+        -A FORWARD -o cni0 -j ACCEPT
+        COMMIT
+        # EOF
+  - filesystem: root
+    path: /etc/hostname
+    mode: 420
+    contents:
+      inline: |-
+        {{ .hostname }}
+  - filesystem: root
+    path: /etc/ssh/sshd_config
+    mode: 420
+    contents:
+      inline: |-
+        # From: https://wiki.mozilla.org/Security/Guidelines/OpenSSH#Modern_.28OpenSSH_6.7.2B.29
+        # Supported HostKey algorithms by order of preference.
+        HostKey /etc/ssh/ssh_host_ed25519_key
+        HostKey /etc/ssh/ssh_host_rsa_key
+        HostKey /etc/ssh/ssh_host_ecdsa_key
+         
+        KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256
+         
+        Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+         
+        MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+         
+        # Password based logins are disabled - only public key based logins are allowed.
+        AuthenticationMethods publickey
+         
+        # LogLevel VERBOSE logs user's key fingerprint on login. Needed to have a clear audit track of which key was using to log in.
+        LogLevel VERBOSE
+         
+        # Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.
+        Subsystem sftp  /usr/lib/ssh/sftp-server -f AUTHPRIV -l INFO
+         
+        # Root login is not allowed for auditing reasons. This is because it's difficult to track which process belongs to which root user:
+        #
+        # On Linux, user sessions are tracking using a kernel-side session id, however, this session id is not recorded by OpenSSH.
+        # Additionally, only tools such as systemd and auditd record the process session id.
+        # On other OSes, the user session id is not necessarily recorded at all kernel-side.
+        # Using regular users in combination with /bin/su or /usr/bin/sudo ensure a clear audit track.
+        PermitRootLogin No
+         
+        # Use kernel sandbox mechanisms where possible in unprivilegied processes
+        # Systrace on OpenBSD, Seccomp on Linux, seatbelt on MacOSX/Darwin, rlimit elsewhere.
+        UsePrivilegeSeparation sandbox 
+        Port 222
+        AllowUsers core
+systemd:
+  units:
+  - name: flanneld.service
+    enable: true
+    dropins:
+    - name: 10-options.conf
+      contents: |-
+        [Service]
+        ExecStartPre=/usr/bin/ln -sf /etc/flannel/options.env /run/flannel/options.env
+  - name: docker.service
+    enable: true
+    dropins:
+    - name: 40-after-flannel.conf
+      contents: |-
+        [Unit]
+        Requires=flanneld.service
+        After=flanneld.service
+  - name: kubelet.service
+    enable: true
+    contents: |-
+      [Service]
+      ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+      ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+      
+      Environment=KUBELET_VERSION=v1.5.2_coreos.1
+      Environment="RKT_OPTS=--volume var-log,kind=host,source=/var/log \
+        --mount volume=var-log,target=/var/log \
+        --volume dns,kind=host,source=/etc/resolv.conf \
+        --mount volume=dns,target=/etc/resolv.conf"
+      
+      ExecStart=/usr/lib/coreos/kubelet-wrapper \
+        --address={{ .internalIP }} \
+        --node-ip={{ .internalIP }} \
+        --network-plugin=cni \
+        --require-kubeconfig=true \
+        --network-plugin-dir=/etc/kubernetes/cni/net.d \
+        --register-node=true \
+        --allow-privileged=true \
+        --pod-manifest-path=/etc/kubernetes/manifests \
+        --cluster-dns=10.3.0.10 \
+        --cluster-domain=cluster.local \
+        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        --cert-dir=/etc/kubernetes/ssl \
+        --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap.yaml
+      Restart=always
+      RestartSec=10
+      [Install]
+      WantedBy=multi-user.target
+  - name: update-engine.service
+    mask: true
+  - name: locksmithd.service
+    mask: true
+  - name: iptables-restore.service
+    enable: true
+  - name: iptables-store.service
+    enable: true
+  - name: ip6tables-restore.service
+    enable: true
+  - name: ip6tables-store.service
+    enable: true
+  - name: sshd.socket
+    mask: true
+  - name: sshd.service
+    enable: true
+    contents: |-
+      [Unit]
+      Description=OpenSSH server
+      [Service]
+      ExecStart=/usr/sbin/sshd -D -e
+      ExecReload=/bin/kill -HUP $MAINPID
+      Restart=on-failure
+      RestartSec=30s
+      [Install]
+      WantedBy=multi-user.target
+  - name: docker.service
+    contents: |-
+      [Unit]
+      Description=Docker Application Container Engine
+      Documentation=http://docs.docker.com
+      After=docker.socket
+      Requires=docker.socket
+      
+      [Service]
+      Type=simple
+      
+      ExecStartPre=/usr/bin/rkt trust --root https://keybase.io/euank/key.asc --trust-keys-from-https
+      ExecStartPre=/usr/bin/rkt image fetch https://storage.googleapis.com/users.developer.core-os.net/euank/skim/96ccd4d/stage1-skim.aci
+      ExecStartPre=/usr/bin/rkt image fetch https://storage.googleapis.com/users.developer.core-os.net/euank/skim/docker-aci-1325.0.0%2B2017-03-01-1448-a1/coreos_docker-1.12.6-amd64-usr.aci
+      
+      ExecStart=/usr/bin/rkt run --dns=host --interactive \
+        --stage1-name=users.developer.core-os.net/skim/stage1-skim:0.0.1 \
+        "users.developer.core-os.net/skim/docker:1.12.6" \
+        --exec=/usr/lib/coreos/dockerd -- \
+        --host=fd:// $DOCKER_OPTS $DOCKER_CGROUPS $DOCKER_OPT_BIP $DOCKER_OPT_MTU $DOCKER_OPT_IPMASQ
+      
+      ExecReload=/bin/kill -s HUP $MAINPID
+      LimitNOFILE=1048576
+      LimitNPROC=infinity
+      LimitCORE=infinity
+      TasksMax=infinity
+      TimeoutStartSec=0
+      # set delegate yes so that systemd does not reset the cgroups of docker containers
+      Delegate=yes
+      
+      [Install]
+      WantedBy=multi-user.target
+passwd:
+  users:
+  - name: core
+    ssh_authorized_keys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyeivCOXMLvMzKvZjPzNSqD8kvkbsI/Ecdxe7V7HZDG8AfliS68frOZI5pl0uqfBet80e5qH/njDvdfKpKuBiAgUZcBz1+LGdrCr+Tn8Bi0ypu+xSpjJjPT0fVgD9qk0lv5TnUmqZD/BZShQjlp6T0MfETSbGppTxRRZIS2CgjO230fktZST8GUJBX/G0HVupqVdbORVdBkbEx4XfJLrmI3HSuA2drlImhCegrByg8r6k2Q/256myWri8Q2X0bVIg93FqcuLGvngGL8kJinwo/zRPo5ucfH0DWsQWtHo6ayx2FycMsCmd56ZU+FH9PBy73ki4ACqsaGh+T8silAR5R yubikey1
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDMdxqFTG7bPey17ZWg6LbonqASSNJnlmdMg3yiYPuNu6/b4Ffe4iycGAwVl/ODKnEzLZ2aWUhiVrLMv4Z6vml3/l/qU3PPeQRe+TY0afXLbT05xDG2HS/y5SE/6qoynKb2FzJ8YCpI3xdoJ3E4L5+a5vZ1yjknaFcHcL0/g5GCsKo0QpO6dH9Tz+W36Ua/kGXmqMzDaOraXLvTc2TBJ4Mm/CRy6zL773V4GE5e+w4MxdYGpaGZ2EaKw37xFAyx2lH2/RbRt+qTsvGOjfhXuMyOEtsrDEkM7mbRdjuC8WzlutTrDESRJuVAu47HEZjMKCaQ05wgI/LYS3CeolorGDf9tahnjS5s0x7X+NIRkEA0qgpxUwr5T9Z7JKWIIOV90Rbu6CFEfhldNtfA5uD8RLufIiiQTsTZmHjHaPWi98iphb+wMpy8yB4lPPzoWfSuofPVcWaLFoFzGwKkP38XLyeKXEyUgGJPTLPLkGNjQgTBqZlOTL06UR8GNKPtWo5dMCvsFuz0+u34LaeyNg+2i7gvhWZakDZ1EAqWdtj6A+8oAlIEa04OR09xlfdjA9BMA4xGyq9sOKn99tV5qTIZl3X+MIxxPUm0TYXulM4kByeKROAvQhgwSUJAE63qVddBnl+PAsUZPREl8l/ccuytZIlnDn2RY0LlIXGYb0tIEykSqw== yubikey2
+
