@@ -52,7 +52,7 @@ function image::latest_coreos_stable() {
 function image::coreos_path() {
   local channel=${1:?channel}
   local version=${2:?version}
-  echo "${IMAGE_ROOT}coreos/coreos_${channel}_${version}.img"
+  echo "${IMAGE_ROOT}/coreos/coreos_${channel}_${version}.img"
 }
 
 function image::latest_coreos_stable_path() {
