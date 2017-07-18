@@ -1,5 +1,19 @@
 source "${ROOT}/util/kv.sh"
 
+function image::update_coreos_image_dir() {
+    channel=${1:?channel}
+    version=${2:?version}
+    url=${3:?url}
+    mkdir -p "${IMAGE_ROOT}/coreos"
+    IMAGE_FILE="$(image::coreos_path "${channel}" "${version}")"
+
+    if [[ -e "${IMAGE_FILE}" ]]; then
+      echo "Image already exists: ${IMAGE_FILE}"
+    else
+      wget "${url}" -O - | bzcat > "${IMAGE_FILE}"
+    fi
+}
+
 function image::update_coreos_image() {
   channel=${1:?specify channel}
   if [[ "$channel" != "alpha" && "$channel" != "stable" ]]; then
@@ -17,27 +31,20 @@ function image::update_coreos_image() {
 
   local url="https://${channel}.release.core-os.net/amd64-usr/${COREOS_VERSION}/coreos_production_qemu_image.img.bz2"
 
-  if [[ "${IMAGE_STORE_TYPE}" == "dir" ]]; then
-    mkdir -p "${IMAGE_ROOT}/coreos"
-    IMAGE_FILE="$(image::coreos_path "${channel}" "${COREOS_VERSION}")"
-
-    if [[ -e "${IMAGE_FILE}" ]]; then
-      echo "Image already exists: ${IMAGE_FILE}"
-    else
-      wget "${url}" -O - | bzcat > "${IMAGE_FILE}"
-    fi
-  else
+  if ! [[ $(type -t "image::update_coreos_image_${IMAGE_STORE_TYPE}") == "function" ]]; then
     echo "Image store type currently unsupported"
     return 1
   fi
 
-  kv::set "latest_coreos_${channel}" "${COREOS_VERSION}"
+  image::update_coreos_image_${IMAGE_STORE_TYPE} "${channel}" "${COREOS_VERSION}" "${url}"
+
+  kv::set "latest_coreos_${IMAGE_STORE_TYPE}_${channel}" "${COREOS_VERSION}"
    
   return 0
 }
 
 function image::latest_coreos_alpha() {
-  kv::get "latest_coreos_alpha"
+  kv::get "latest_coreos_${IMAGE_STORE_TYPE}_alpha"
 }
 
 function image::latest_coreos_alpha_path() {
@@ -46,7 +53,7 @@ function image::latest_coreos_alpha_path() {
 }
 
 function image::latest_coreos_stable() {
-  kv::get "latest_coreos_stable"
+  kv::get "latest_coreos_${IMAGE_STORE_TYPE}_stable"
 }
 
 function image::coreos_path() {
