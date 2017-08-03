@@ -364,48 +364,22 @@ systemd:
     mask: true
   - name: sshd.service
     enable: true
-    contents: |-
-      [Unit]
-      Description=OpenSSH server
-      [Service]
-      ExecStart=/usr/sbin/sshd -D -e
-      ExecReload=/bin/kill -HUP $MAINPID
-      Restart=on-failure
-      RestartSec=30s
-      [Install]
-      WantedBy=multi-user.target
   - name: docker.service
+    enable: true
+networkd:
+  units:
+  - name: xx-dhcp.network
     contents: |-
-      [Unit]
-      Description=Docker Application Container Engine
-      Documentation=http://docs.docker.com
-      After=docker.socket
-      Requires=docker.socket
-      
-      [Service]
-      Type=simple
-      
-      ExecStartPre=/usr/bin/rkt trust --root https://keybase.io/euank/key.asc --trust-keys-from-https
-      ExecStartPre=/usr/bin/rkt image fetch https://storage.googleapis.com/users.developer.core-os.net/euank/skim/96ccd4d/stage1-skim.aci
-      ExecStartPre=/usr/bin/rkt image fetch https://storage.googleapis.com/users.developer.core-os.net/euank/skim/docker-aci-1325.0.0%2B2017-03-01-1448-a1/coreos_docker-1.12.6-amd64-usr.aci
-      
-      ExecStart=/usr/bin/rkt run --dns=host --interactive \
-        --stage1-name=users.developer.core-os.net/skim/stage1-skim:0.0.1 \
-        "users.developer.core-os.net/skim/docker:1.12.6" \
-        --exec=/usr/lib/coreos/dockerd -- \
-        --host=fd:// $DOCKER_OPTS $DOCKER_CGROUPS $DOCKER_OPT_BIP $DOCKER_OPT_MTU $DOCKER_OPT_IPMASQ
-      
-      ExecReload=/bin/kill -s HUP $MAINPID
-      LimitNOFILE=1048576
-      LimitNPROC=infinity
-      LimitCORE=infinity
-      TasksMax=infinity
-      TimeoutStartSec=0
-      # set delegate yes so that systemd does not reset the cgroups of docker containers
-      Delegate=yes
-      
-      [Install]
-      WantedBy=multi-user.target
+      # Attempt to work around https://github.com/systemd/systemd/issues/5625
+      [Network]
+      DHCP=ipv4
+      IPv6AcceptRA=no
+      LinkLocalAddressing=no
+
+
+      [DHCP]
+      UseMTU=true
+      UseDomains=true
 passwd:
   users:
   - name: core
