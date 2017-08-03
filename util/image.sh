@@ -16,8 +16,8 @@ function image::update_coreos_image_dir() {
 
 function image::update_coreos_image() {
   channel=${1:?specify channel}
-  if [[ "$channel" != "alpha" && "$channel" != "stable" ]]; then
-    echo "must specify stable or alpha"
+  if [[ "$channel" != "alpha" && "$channel" != "stable" && "$channel" != "beta" ]]; then
+    echo "must specify stable or beta alpha"
     exit 1
   fi
   local version_info=$(curl -s "https://${channel}.release.core-os.net/amd64-usr/current/version.txt")
@@ -61,6 +61,16 @@ function image::coreos_path() {
   local version=${2:?version}
   echo "${IMAGE_ROOT}/coreos/coreos_${channel}_${version}.img"
 }
+
+function image::latest_coreos_beta() {
+  kv::get "latest_coreos_${IMAGE_STORE_TYPE}_beta"
+}
+
+function image::latest_coreos_beta_path() {
+  local beta=$(kv::get "latest_coreos_${IMAGE_STORE_TYPE}_beta")
+  image::coreos_path "beta" "$beta"
+}
+
 
 function image::latest_coreos_stable_path() {
   local stable=$(image::latest_coreos_stable)
