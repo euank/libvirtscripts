@@ -40,7 +40,7 @@ storage:
           hostNetwork: true
           containers:
           - name: kube-proxy
-            image: quay.io/coreos/hyperkube:v1.5.7_coreos.0
+            image: quay.io/coreos/hyperkube:{{ .kubeletVersion }}
             command:
             - /hyperkube
             - proxy
@@ -220,7 +220,7 @@ systemd:
       ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
       ExecStartPre=/usr/bin/mkdir -p /var/log/containers
       
-      Environment=KUBELET_VERSION=v1.5.7_coreos.0
+      Environment=KUBELET_VERSION={{ .kubeletVersion }}
       Environment="RKT_OPTS=--volume var-log,kind=host,source=/var/log \
         --mount volume=var-log,target=/var/log \
         --volume dns,kind=host,source=/etc/resolv.conf \
@@ -231,7 +231,7 @@ systemd:
         --node-ip={{ .internalIP }} \
         --network-plugin=cni \
         --require-kubeconfig=true \
-        --network-plugin-dir=/etc/kubernetes/cni/net.d \
+        --cni-conf-dir=/etc/kubernetes/cni/net.d \
         --register-node=true \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \

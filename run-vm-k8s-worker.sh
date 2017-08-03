@@ -15,8 +15,11 @@ fi
 MEMORY=4096
 DISK_IMAGE=$(image::latest_coreos_alpha_path)
 
-DISK_BASE=/mnt/raidb/virts/disks
-DISK="${DISK_BASE}/${NAME}.ovl"
+DISK_BASE=/mnt/gold/virts/disks
+DISK="${DISK_BASE}/${NAME}.raw"
+
+qemu-img convert "${DISK_IMAGE}" -O raw "${DISK}"
+qemu-img resize "${DISK}" 40G
 
 mac=$(ipam::get_free_mac)
 internal_mac=$(name::random_mac)
@@ -36,10 +39,23 @@ virsh net-update --network "internal" add-last ip-dhcp-host \
 
 sleep 3
 
-qemu-img create -f qcow2 -b "${DISK_IMAGE}" "${DISK}" 40G
-
 domain_file="${DISK}.domain.xml"
-virt-install --virt-type=kvm --connect "qemu:///system" --memory ${MEMORY} -n "${NAME}" --vcpus 8 -v --os-variant=virtio26 --os-type linux --disk path="${DISK}",device=disk,bus=virtio,format=qcow2,cache="writeback" --boot=hd --network type=direct,source=enp3s0,source_mode=bridge,mac="${mac}",model=virtio --graphics=none --noautoconsole --network bridge=virbr1,model=virtio,mac="${internal_mac}" --print-xml > "${domain_file}"
+virt-install \
+	--virt-type=kvm \
+	--connect "qemu:///system" \
+	--memory ${MEMORY} \
+	-n "${NAME}" \
+	--vcpus 8 \
+	-v \
+	--os-variant=virtio26 \
+	--os-type linux \
+	--disk path="${DISK}",device=disk,bus=virtio,format=raw\
+	--boot=hd \
+	--network type=direct,source=enp3s0,source_mode=bridge,mac="${mac}",model=virtio \
+	--graphics=none \
+	--noautoconsole \
+	--network bridge=virbr1,model=virtio,mac="${internal_mac}" \
+	--print-xml > "${domain_file}"
 
 template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
@@ -51,6 +67,7 @@ internalIP: "${internal_ip}"
 flannelEtcdEndpoints: "${FLANNELD_ETCD_ENDPOINTS}"
 bootstrapToken: "${SECRET_BOOTSTRAP_TOKEN}"
 hostname: "${NAME}.k8s.euank.com"
+kubeletVersion: "v1.6.7_coreos.0"
 EOF
 
 ./bin/sprig -f "${template_config}" "./clcs/k8s-worker.clt.tmpl" > "${ignition_file}.yaml"
