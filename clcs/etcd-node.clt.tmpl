@@ -102,13 +102,15 @@ systemd:
     enable: true
   - name: sshd.socket
     mask: true
+  - name: sshd.service
+    enable: true
   - name: etcd-member.service
     enable: false
     dropins:
     - name: 40-etcd-cluster.conf
       contents: |
         [Service]
-        Environment="ETCD_IMAGE_TAG=v3.1.2"
+        Environment="ETCD_IMAGE_TAG=v3.2.4"
         Environment="ETCD_NAME={{ .hostname }}"
         Environment="ETCD_ADVERTISE_CLIENT_URLS=http://{{.internalIP}}:2379"
         Environment="ETCD_INITIAL_ADVERTISE_PEER_URLS=http://{{.internalIP}}:2380"
@@ -135,19 +137,6 @@ systemd:
       Requires=install-node-exporter.service
       [Service]
       ExecStart=/opt/bin/node_exporter
-  - name: sshd.service
-    enable: true
-    contents: |-
-      [Unit]
-      Description=OpenSSH server
-      [Service]
-      ExecStart=/usr/sbin/sshd -D -e
-      ExecReload=/bin/kill -HUP $MAINPID
-      Restart=on-failure
-      RestartSec=30s
-      [Install]
-      WantedBy=multi-user.target
-      
 passwd:
   users:
   - name: core
