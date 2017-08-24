@@ -8,7 +8,7 @@ set -e
 NAME="k8s-$(name::random_name)"
 internal_ip="${1:?Internal IP}"
 
-MEMORY=4048
+MEMORY=4096
 DISK_IMAGE=$(image::latest_coreos_alpha_path)
 
 DISK_BASE=/mnt/gold/virts/disks
