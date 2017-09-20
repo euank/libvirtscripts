@@ -30,7 +30,7 @@ virt-install --virt-type=kvm \
              --connect "qemu:///system" \
 	     --memory ${MEMORY} \
 	     -n "${NAME}" \
-	     --vcpus 2 \
+	     --vcpus 4 \
 	     -v \
 	     --os-variant=virtio26 \
 	     --os-type linux \
@@ -45,6 +45,7 @@ template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
 
 cat > "${template_config}" <<EOF
+kubeletVersion: v1.6.8_coreos.0
 k8sCa: |-
 $(util::misc::indent "$(util::certs::get_ca)" 2)
 internalIP: "${internal_ip}"
