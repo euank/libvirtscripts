@@ -23,7 +23,8 @@ storage:
           "name": "cniflannel",
           "type": "flannel",
           "delegate": {
-            "isDefaultGateway": true
+            "isDefaultGateway": true,
+            "hairpinMode": true
           }
         }
   - filesystem: root
@@ -212,7 +213,7 @@ systemd:
       ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
       ExecStartPre=/usr/bin/mkdir -p /var/log/containers
       
-      Environment=KUBELET_VERSION=v1.5.7_coreos.0
+      Environment=KUBELET_VERSION= {{ .kubeletVersion }}
       Environment="RKT_OPTS=--volume var-log,kind=host,source=/var/log \
         --mount volume=var-log,target=/var/log \
         --volume dns,kind=host,source=/etc/resolv.conf \
