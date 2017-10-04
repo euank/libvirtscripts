@@ -26,20 +26,21 @@ qemu-img convert "${DISK_IMAGE}" -O raw "${DISK}"
 qemu-img resize "${DISK}" 50G
 
 domain_file="${DISK}.domain.xml"
-virt-install --virt-type=kvm \
-             --connect "qemu:///system" \
-	     --memory ${MEMORY} \
-	     -n "${NAME}" \
-	     --vcpus 4 \
-	     -v \
-	     --os-variant=virtio26 \
-	     --os-type linux \
-	     --disk path="${DISK}",device=disk,bus=virtio,format=raw \
-	     --boot=hd --network network=default,model=virtio \
-	     --graphics=none \
-	     --noautoconsole \
-	     --network bridge=virbr1,model=virtio,mac="${internal_mac}" \
-	     --print-xml > "${domain_file}"
+virt-install \
+	--virt-type=kvm \
+	--connect "qemu:///system" \
+	--memory ${MEMORY} \
+	-n "${NAME}" \
+	--vcpus 4 \
+	-v \
+	--os-variant=virtio26 \
+	--os-type linux \
+	--disk path="${DISK}",device=disk,bus=virtio,format=raw \
+	--boot=hd --network network=default,model=virtio \
+	--graphics=none \
+	--noautoconsole \
+	--network bridge=virbr1,model=virtio,mac="${internal_mac}" \
+	--print-xml > "${domain_file}"
 
 template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
