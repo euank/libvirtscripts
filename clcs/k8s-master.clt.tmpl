@@ -96,8 +96,8 @@ storage:
         metadata:
           name: kube-scheduler
           namespace: kube-system
-	  labels:
-	    k8s-app: kube-scheduler
+          labels:
+            k8s-app: kube-scheduler
         spec:
           hostNetwork: true
           containers:
@@ -180,8 +180,8 @@ storage:
         metadata:
           name: kube-controller-manager
           namespace: kube-system
-	  labels:
-	    k8s-app: kube-controller-manager
+          labels:
+            k8s-app: kube-controller-manager
         spec:
           hostNetwork: true
           containers:
@@ -196,7 +196,6 @@ storage:
             - --root-ca-file=/etc/kubernetes/ssl/ca.pem
             - --cluster-signing-cert-file=/etc/kubernetes/ssl/ca-root.pem
             - --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem
-            - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
             livenessProbe:
               httpGet:
                 host: 127.0.0.1
@@ -339,13 +338,13 @@ systemd:
         --node-ip={{ .internalIP }} \
         --read-only-port=0 \
         --network-plugin=cni \
-        --require-kubeconfig=true \
+        --require-kubeconfig=false \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         --register-schedulable=false \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
         --cluster-dns=10.3.0.10 \
-        --cluster-domain=cluster.local \
+        --cluster-domain=cluster.local
       Restart=always
       RestartSec=10
       [Install]
