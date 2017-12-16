@@ -232,7 +232,7 @@ systemd:
         --cluster-domain=cluster.local \
         --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
         --cert-dir=/etc/kubernetes/ssl \
-        --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap.yaml
+        --bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap.yaml
       Restart=always
       RestartSec=10
       [Install]

@@ -398,7 +398,6 @@ systemd:
         --node-ip={{ .internalIP }} \
         --read-only-port=0 \
         --network-plugin=cni \
-        --require-kubeconfig=true \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         --register-with-taints=node-role.kubernetes.io/master=true:NoSchedule \
         --allow-privileged=true \

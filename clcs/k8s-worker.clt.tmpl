@@ -2,6 +2,16 @@
 storage:
   files:
   - filesystem: root
+    mode: 493
+    path: /opt/bin/kubelet
+    contents:
+      remote:
+        url: "https://storage.googleapis.com/kubernetes-release/release/v{{.kubeletVersion}}/bin/linux/amd64/kubelet"
+        verification:
+          hash:
+            function: sha512
+            sum: "{{.kubeletHash}}"
+  - filesystem: root
     mode: 420
     path: /etc/kubernetes/ssl/ca.pem
     contents:
@@ -41,7 +51,7 @@ storage:
           hostNetwork: true
           containers:
           - name: kube-proxy
-            image: quay.io/coreos/hyperkube:{{ .kubeletVersion }}
+            image: gcr.io/google-containers/hyperkube-amd64:v{{ .kubeletVersion }}
             command:
             - /hyperkube
             - proxy
@@ -217,17 +227,10 @@ systemd:
       ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
       ExecStartPre=/usr/bin/mkdir -p /var/log/containers
       
-      Environment=KUBELET_VERSION={{ .kubeletVersion }}
-      Environment="RKT_OPTS=--volume var-log,kind=host,source=/var/log \
-        --mount volume=var-log,target=/var/log \
-        --volume dns,kind=host,source=/etc/resolv.conf \
-        --mount volume=dns,target=/etc/resolv.conf"
-      
-      ExecStart=/usr/lib/coreos/kubelet-wrapper \
+      ExecStart=/opt/bin/kubelet \
         --address={{ .internalIP }} \
         --node-ip={{ .internalIP }} \
         --network-plugin=cni \
-        --require-kubeconfig=true \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         --register-node=true \
         --allow-privileged=true \
@@ -236,7 +239,7 @@ systemd:
         --cluster-domain=cluster.local \
         --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
         --cert-dir=/etc/kubernetes/ssl \
-        --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap.yaml
+        --bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap.yaml
       Restart=always
       RestartSec=10
       [Install]

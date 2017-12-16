@@ -46,13 +46,14 @@ template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
 
 cat > "${template_config}" <<EOF
-kubeletVersion: v1.7.7_coreos.0
 k8sCa: |-
 $(util::misc::indent "$(util::certs::get_ca)" 2)
 internalIP: "${internal_ip}"
 flannelEtcdEndpoints: "${FLANNELD_ETCD_ENDPOINTS}"
 bootstrapToken: "${SECRET_BOOTSTRAP_TOKEN}"
 hostname: "${NAME}.k8s.euank.com"
+kubeletVersion: 1.8.2
+kubeletHash: "7d567b454abe211de8da0f88a11a78abb6e414d0ff7a91c7e5f0c31ef862b96b6e964d6a3cac660988297ca58783e962d5fd9462db2400fd2dab719169827882"
 EOF
 
 ./bin/sprig -f "${template_config}" "./clcs/k8s-worker.clt.tmpl" > "${ignition_file}.yaml"
