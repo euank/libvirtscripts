@@ -7,7 +7,7 @@ set -e
 
 NAME="k8s-$(name::random_name)"
 
-if `grep "${NAME}$" taken.txt`; then
+if `grep -E "${NAME}$" taken.txt`; then
   echo "try again"
   exit 1
 fi
