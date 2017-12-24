@@ -202,6 +202,8 @@ systemd:
       contents: |-
         [Service]
         ExecStartPre=/usr/bin/ln -sf /etc/flannel/options.env /run/flannel/options.env
+  - name: rkt-gc.timer
+    mask: true
   - name: flannel-docker-opts.service
     dropins:
     - name: 10-disable-running.conf
