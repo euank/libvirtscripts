@@ -49,7 +49,7 @@ virt-install \
 	-v \
 	--os-variant=virtio26 \
 	--os-type linux \
-	--disk path="${DISK}",device=disk,bus=virtio,format=raw\
+	--disk path="${DISK}",device=disk,bus=virtio,format=raw \
 	--boot=hd \
 	--network type=direct,source=enp3s0,source_mode=bridge,mac="${mac}",model=virtio \
 	--graphics=none \
