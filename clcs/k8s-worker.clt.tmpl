@@ -12,6 +12,15 @@ storage:
             function: sha512
             sum: "{{.kubeletHash}}"
   - filesystem: root
+    path: /opt/cni/plugins.tgz
+    contents:
+      remote:
+        url: https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-amd64-v0.6.0.tgz
+        verification:
+          hash:
+            function: sha512
+            sum: "398afcb1bdac39b3c5113ef6e114b887827a3600a227cd5cef7d36eaea397670520f35b221907490ad78af81049629a321816ce834318749ef7e75d2ab12a5c4"
+  - filesystem: root
     mode: 420
     path: /etc/kubernetes/ssl/ca.pem
     contents:
@@ -234,6 +243,7 @@ systemd:
         --node-ip={{ .internalIP }} \
         --network-plugin=cni \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
+        --cni-bin-dir=/opt/cni \
         --register-node=true \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
@@ -244,6 +254,17 @@ systemd:
         --bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap.yaml
       Restart=always
       RestartSec=10
+      [Install]
+      WantedBy=multi-user.target
+  - name: extract-cni.service
+    enable: true
+    contents: |-
+      [Service]
+      Type=oneshot
+      RemainAfterExit=true
+      ConditionPathExists=/opt/cni/plugins.tgz
+      ExecStart=/usr/bin/tar -C /opt/cni -xf /opt/cni/plugins.tgz
+      ExecStart=/usr/bin/rm -f /opt/cni/plugins.tgz
       [Install]
       WantedBy=multi-user.target
   - name: update-engine.service
