@@ -1,4 +1,3 @@
-
 function util::certs::_getfile() {
   [[ -f "${SECRET_CERT_DIR}/${1}" ]] || {
     1>&2 echo "no '${1}' found in ${SECRET_CERT_DIR}"
@@ -25,4 +24,20 @@ function util::certs::get_apiserver_pem() {
 
 function util::certs::get_apiserver_key() {
   util::certs::_getfile "apiserver-key.pem"
+}
+
+function util::certs::get_controller_pem() {
+  util::certs::_getfile "controller.pem"
+}
+
+function util::certs::get_controller_key() {
+  util::certs::_getfile "controller-key.pem"
+}
+
+function util::certs::get_scheduler_pem() {
+  util::certs::_getfile "scheduler.pem"
+}
+
+function util::certs::get_scheduler_key() {
+  util::certs::_getfile "scheduler-key.pem"
 }

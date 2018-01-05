@@ -28,47 +28,6 @@ storage:
           }
         }
   - filesystem: root
-    path: /etc/kubernetes/manifests/kube-proxy.yaml
-    mode: 420
-    contents:
-      inline: |-
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: kube-proxy
-          namespace: kube-system
-        spec:
-          hostNetwork: true
-          containers:
-          - name: kube-proxy
-            image: quay.io/coreos/hyperkube:v1.5.7_coreos.0
-            command:
-            - /hyperkube
-            - proxy
-            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
-            - --cluster-cidr=10.2.0.0/16
-            securityContext:
-              privileged: true
-            volumeMounts:
-              - mountPath: /etc/ssl/certs
-                name: "ssl-certs"
-              - mountPath: /etc/kubernetes/worker-kubeconfig.yaml
-                name: "kubeconfig"
-                readOnly: true
-              - mountPath: /etc/kubernetes/ssl
-                name: "etc-kube-ssl"
-                readOnly: true
-          volumes:
-            - name: "ssl-certs"
-              hostPath:
-                path: "/usr/share/ca-certificates"
-            - name: "kubeconfig"
-              hostPath:
-                path: "/etc/kubernetes/worker-kubeconfig.yaml"
-            - name: "etc-kube-ssl"
-              hostPath:
-                path: "/etc/kubernetes/ssl"
-  - filesystem: root
     path: /etc/kubernetes/worker-bootstrap.yaml
     mode: 420
     contents:

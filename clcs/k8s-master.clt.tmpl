@@ -99,47 +99,6 @@ storage:
           }
         }
   - filesystem: root
-    path: /etc/kubernetes/manifests/kube-proxy.yaml
-    mode: 420
-    contents:
-      inline: |-
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: kube-proxy
-          namespace: kube-system
-        spec:
-          hostNetwork: true
-          containers:
-          - name: kube-proxy
-            image: gcr.io/google-containers/hyperkube-amd64:v{{ .kubeletVersion }}
-            command:
-            - /hyperkube
-            - proxy
-            - --cluster-cidr=10.2.0.0/16
-            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
-            securityContext:
-              privileged: true
-            volumeMounts:
-              - mountPath: /etc/ssl/certs
-                name: "ssl-certs"
-              - mountPath: /etc/kubernetes/worker-kubeconfig.yaml
-                name: "kubeconfig"
-                readOnly: true
-              - mountPath: /etc/kubernetes/ssl
-                name: "etc-kube-ssl"
-                readOnly: true
-          volumes:
-            - name: "ssl-certs"
-              hostPath:
-                path: "/usr/share/ca-certificates"
-            - name: "kubeconfig"
-              hostPath:
-                path: "/etc/kubernetes/worker-kubeconfig.yaml"
-            - name: "etc-kube-ssl"
-              hostPath:
-                path: "/etc/kubernetes/ssl"
-  - filesystem: root
     path: /etc/kubernetes/manifests/kube-scheduler.yaml
     mode: 420
     contents:
@@ -209,6 +168,7 @@ storage:
             - --bind-address=0.0.0.0
             - --etcd-servers=http://192.168.131.3:2379,http://192.168.131.4:2379,http://192.168.131.5:2379
             - --allow-privileged=true
+            - --authorization-mode=RBAC
             - --service-cluster-ip-range=10.3.0.0/24
             - --secure-port=443
             - --kubelet-preferred-address-types=InternalIP
@@ -220,6 +180,7 @@ storage:
             - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
             - --runtime-config=extensions/v1beta1=true,extensions/v1beta1/networkpolicies=true
             - --token-auth-file=/etc/kubernetes/ssl/kube-apiserver-token.csv
+            - --v=2
             ports:
             - containerPort: 443
               hostPort: 443
@@ -263,6 +224,7 @@ storage:
             - controller-manager
             - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
             - --leader-elect=true
+            - --use-service-account-credentials
             - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
             - --root-ca-file=/etc/kubernetes/ssl/ca.pem
             - --cluster-signing-cert-file=/etc/kubernetes/ssl/ca-root.pem
