@@ -61,7 +61,8 @@ template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
 
 cat > "${template_config}" <<EOF
-kubeletVersion: v1.7.7_coreos.0
+kubeletVersion: 1.8.6
+kubeletHash: "776faf94a668d4923b0b011262d965273e467482e62eba7446a4df6cdb9f8976fb6ca9b4c17b3484f26c349a21aeccc867e1602a0d8675ac52bd78385b3ce443"
 k8sCa: |-
 $(util::misc::indent "$(util::certs::get_ca)" 2)
 internalIP: "${internal_ip}"
