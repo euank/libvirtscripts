@@ -55,6 +55,14 @@ k8sApiserverPem: |-
 $(util::misc::indent "$(util::certs::get_apiserver_pem)" 2)
 k8sApiserverKey: |-
 $(util::misc::indent "$(util::certs::get_apiserver_key)" 2)
+k8sControllerPem: |-
+$(util::misc::indent "$(util::certs::get_controller_pem)" 2)
+k8sControllerKey: |-
+$(util::misc::indent "$(util::certs::get_controller_key)" 2)
+k8sSchedulerPem: |-
+$(util::misc::indent "$(util::certs::get_scheduler_pem)" 2)
+k8sSchedulerKey: |-
+$(util::misc::indent "$(util::certs::get_scheduler_key)" 2)
 internalIP: "${internal_ip}"
 flannelEtcdEndpoints: "${FLANNELD_ETCD_ENDPOINTS}"
 bootstrapToken: "${SECRET_BOOTSTRAP_TOKEN}"

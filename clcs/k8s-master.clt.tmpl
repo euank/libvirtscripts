@@ -43,6 +43,52 @@ storage:
           name: kubelet-context
         current-context: kubelet-context
   - filesystem: root
+    path: /etc/kubernetes/controllermanager-kubeconfig.yaml
+    mode: 420
+    contents:
+      inline: |-
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: kubernetes
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://k8s-master.internal.k8s.euank.com
+        users:
+        - name: controllermanager
+          user:
+            client-certificate: /etc/kubernetes/ssl/controller.pem
+            client-key: /etc/kubernetes/ssl/controller-key.pem
+        contexts:
+        - context:
+            cluster: kubernetes
+            user: controllermanager
+          name: cm-ctx
+        current-context: cm-ctx
+  - filesystem: root
+    path: /etc/kubernetes/scheduler-kubeconfig.yaml
+    mode: 420
+    contents:
+      inline: |-
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: kubernetes
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://k8s-master.internal.k8s.euank.com
+        users:
+        - name: scheduler
+          user:
+            client-certificate: /etc/kubernetes/ssl/scheduler.pem
+            client-key: /etc/kubernetes/ssl/scheduler-key.pem
+        contexts:
+        - context:
+            cluster: kubernetes
+            user: scheduler
+          name: s-ctx
+        current-context: s-ctx
+  - filesystem: root
     mode: 420
     path: /etc/kubernetes/ssl/ca.pem
     contents:
@@ -72,6 +118,30 @@ storage:
     contents:
       inline: |-
 {{ .k8sApiserverKey | indent 8}}
+  - filesystem: root
+    mode: 420
+    path: /etc/kubernetes/ssl/controller.pem
+    contents:
+      inline: |-
+{{ .k8sControllerPem | indent 8}}
+  - filesystem: root
+    mode: 256
+    path: /etc/kubernetes/ssl/controller-key.pem
+    contents:
+      inline: |-
+{{ .k8sControllerKey | indent 8}}
+  - filesystem: root
+    mode: 420
+    path: /etc/kubernetes/ssl/scheduler.pem
+    contents:
+      inline: |-
+{{ .k8sSchedulerPem | indent 8}}
+  - filesystem: root
+    mode: 256
+    path: /etc/kubernetes/ssl/scheduler-key.pem
+    contents:
+      inline: |-
+{{ .k8sSchedulerKey | indent 8}}
   - filesystem: root
     mode: 256
     path: /etc/kubernetes/ssl/kube-apiserver-token.csv
@@ -118,7 +188,7 @@ storage:
             command:
             - /hyperkube
             - scheduler
-            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
+            - --kubeconfig=/etc/kubernetes/scheduler-kubeconfig.yaml
             - --leader-elect=true
             livenessProbe:
               httpGet:
@@ -222,7 +292,7 @@ storage:
             command:
             - /hyperkube
             - controller-manager
-            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
+            - --kubeconfig=/etc/kubernetes/controllermanager-kubeconfig.yaml
             - --leader-elect=true
             - --use-service-account-credentials
             - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
