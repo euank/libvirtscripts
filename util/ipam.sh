@@ -35,3 +35,7 @@ function ipam::get_ip() {
   fi
   echo "$ip"
 }
+
+function ipam::free_internal_ip() {
+  :
+}
