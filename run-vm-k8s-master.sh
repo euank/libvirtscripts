@@ -13,10 +13,10 @@ if `grep "${NAME}$" taken.txt`; then
 fi
 
 MEMORY=2048
-DISK_IMAGE=$(image::latest_coreos_alpha_path)
+DISK_IMAGE=$(image::latest_coreos_stable_path)
 
-DISK_BASE=/mnt/raidb/virts/disks
-DISK="${DISK_BASE}/${NAME}.ovl"
+DISK_BASE=/mnt/gold/virts/disks
+DISK="${DISK_BASE}/${NAME}.raw"
 
 mac=$(ipam::get_free_mac)
 internal_mac=$(name::random_mac)
@@ -36,10 +36,25 @@ virsh net-update --network "internal" add-last ip-dhcp-host \
 
 sleep 3
 
-qemu-img create -f qcow2 -b "${DISK_IMAGE}" "${DISK}" 40G
+qemu-img convert "${DISK_IMAGE}" -O raw "${DISK}"
+qemu-img resize "${DISK}" 40G
 
 domain_file="${DISK}.domain.xml"
-virt-install --virt-type=kvm --connect "qemu:///system" --memory ${MEMORY} -n "${NAME}" --vcpus 8 -v --os-variant=virtio26 --os-type linux --disk path="${DISK}",device=disk,bus=virtio,format=qcow2,cache="writeback" --boot=hd --network type=direct,source=enp3s0,source_mode=bridge,mac="${mac}",model=virtio --graphics=none --noautoconsole --network bridge=virbr1,model=virtio,mac="${internal_mac}" --print-xml > "${domain_file}"
+virt-install \
+  --virt-type=kvm \
+  --connect "qemu:///system" \
+  --memory ${MEMORY} \
+  -n "${NAME}" \
+  --vcpus 4 \
+  -v --os-variant=virtio26 \
+  --os-type linux \
+  --disk path="${DISK}",device=disk,bus=virtio,format=raw \
+  --boot=hd \
+  --network type=direct,source=enp3s0,source_mode=bridge,mac="${mac}",model=virtio \
+  --network bridge=virbr1,model=virtio,mac="${internal_mac}" \
+  --graphics=none \
+  --noautoconsole \
+  --print-xml > "${domain_file}"
 
 template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
