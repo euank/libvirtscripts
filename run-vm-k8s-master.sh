@@ -82,8 +82,8 @@ internalIP: "${internal_ip}"
 flannelEtcdEndpoints: "${FLANNELD_ETCD_ENDPOINTS}"
 bootstrapToken: "${SECRET_BOOTSTRAP_TOKEN}"
 hostname: "${NAME}.k8s.euank.com"
-kubeletVersion: 1.8.6
-kubeletHash: "776faf94a668d4923b0b011262d965273e467482e62eba7446a4df6cdb9f8976fb6ca9b4c17b3484f26c349a21aeccc867e1602a0d8675ac52bd78385b3ce443"
+kubeletVersion: 1.9.9
+kubeletHash: "42c7bc517a39c717943343cc1b7982d9aa24709d7bc4e0952f67c6d8356873e4afa9a6e2430c56443e0931f5a2a87f5f1fa071e15580945c07069f5234a92ae6"
 EOF
 
 ./bin/sprig -f "${template_config}" "./clcs/k8s-master.clt.tmpl" > "${ignition_file}.yaml"
