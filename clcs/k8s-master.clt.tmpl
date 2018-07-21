@@ -373,6 +373,14 @@ storage:
       inline: |-
         {{ .hostname }}
   - filesystem: root
+    path: /etc/docker/daemon.json
+    mode: 420
+    contents:
+      inline: |-
+        {
+          "log-driver": "journald"
+        }
+  - filesystem: root
     path: /etc/ssh/sshd_config
     mode: 420
     contents:
