@@ -27,26 +27,6 @@ storage:
       inline: |-
 {{ .k8sCa | indent 8}}
   - filesystem: root
-    path: /etc/flannel/options.env
-    mode: 420
-    contents:
-      inline: |-
-        FLANNELD_IFACE={{ .internalIP }}
-        FLANNELD_ETCD_ENDPOINTS={{ .flannelEtcdEndpoints }}
-  - filesystem: root
-    path: /etc/kubernetes/cni/net.d/10-flannel.conf
-    mode: 420
-    contents:
-      inline: |-
-        {
-          "name": "cniflannel",
-          "type": "flannel",
-          "delegate": {
-            "isDefaultGateway": true,
-            "hairpinMode": true
-          }
-        }
-  - filesystem: root
     path: /etc/kubernetes/worker-bootstrap.yaml
     mode: 420
     contents:
@@ -165,12 +145,7 @@ storage:
 systemd:
   units:
   - name: flanneld.service
-    enable: true
-    dropins:
-    - name: 10-options.conf
-      contents: |-
-        [Service]
-        ExecStartPre=/usr/bin/ln -sf /etc/flannel/options.env /run/flannel/options.env
+    mask: true
   - name: rkt-gc.timer
     mask: true
   - name: flannel-docker-opts.service
@@ -178,19 +153,11 @@ systemd:
     - name: 10-disable-running.conf
       contents: |-
         [Service]
-        # disabled because I'm using flannel-cni, not docker-flannel
+        # disabled because I'm not using docker-flannel
         ExecStartPre=
         ExecStart=
         ExecStart=/bin/true
         ExecStop=
-  - name: docker.service
-    enable: true
-    dropins:
-    - name: 40-after-flannel.conf
-      contents: |-
-        [Unit]
-        Requires=flanneld.service
-        After=flanneld.service
   - name: kubelet.service
     enable: true
     contents: |-
@@ -202,7 +169,7 @@ systemd:
         --address={{ .internalIP }} \
         --node-ip={{ .internalIP }} \
         --network-plugin=cni \
-        --cni-conf-dir=/etc/kubernetes/cni/net.d \
+        --cni-conf-dir=/etc/cni/net.d \
         --cni-bin-dir=/opt/cni \
         --register-node=true \
         --allow-privileged=true \

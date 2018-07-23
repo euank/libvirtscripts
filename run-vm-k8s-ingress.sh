@@ -13,7 +13,7 @@ if `grep -E "${NAME}$" taken.txt`; then
 fi
 
 MEMORY=4096
-DISK_IMAGE=$(image::latest_coreos_alpha_path)
+DISK_IMAGE=$(image::latest_coreos_stable_path)
 
 DISK_BASE=/mnt/gold/virts/disks
 DISK="${DISK_BASE}/${NAME}.raw"
@@ -61,12 +61,11 @@ template_config="${DISK}.ign.config"
 ignition_file="${DISK}.ign"
 
 cat > "${template_config}" <<EOF
-kubeletVersion: 1.8.6
-kubeletHash: "776faf94a668d4923b0b011262d965273e467482e62eba7446a4df6cdb9f8976fb6ca9b4c17b3484f26c349a21aeccc867e1602a0d8675ac52bd78385b3ce443"
+kubeletVersion: 1.11.1
+kubeletHash: "bba0dd504eda8b1ac7068a440c557c9e6277bfb16da534ce748c5144abbea1b9e70e9902154daf092a67a4b468e9b9d2549436968774e90d60c4143cf169451d"
 k8sCa: |-
 $(util::misc::indent "$(util::certs::get_ca)" 2)
 internalIP: "${internal_ip}"
-flannelEtcdEndpoints: "${FLANNELD_ETCD_ENDPOINTS}"
 bootstrapToken: "${SECRET_BOOTSTRAP_TOKEN}"
 hostname: "${NAME}.k8s.euank.com"
 EOF

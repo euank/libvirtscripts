@@ -36,6 +36,26 @@ function ipam::get_ip() {
   echo "$ip"
 }
 
-function ipam::free_internal_ip() {
-  :
+function ipam::get_internal_ip() {
+  local prefix="192.168.131."
+  local used_suffixes=$(cat map.txt internal_taken.txt | awk '{print $2}' | awk -F. '{print $4}' | sort | uniq)
+
+  if [[ "$(echo "${used_suffixes}" | wc -l)" == "255" ]]; then
+    echo "No ips left"
+    exit 1
+  fi
+
+  while true; do
+    local candidate=$(($RANDOM % 254 + 1))
+    if ! $(grep $candidate <<< "${used_suffixes}"); then
+      echo "${prefix}${candidate}"
+      return 0
+    fi
+  done
+}
+
+function ipam::mark_taken_internal_ip() {
+  name="${1:?name}"
+  ip="${2:?ip as arg}"
+  echo "$name $ip" >> internal_taken.txt
 }

@@ -79,7 +79,6 @@ $(util::misc::indent "$(util::certs::get_scheduler_pem)" 2)
 k8sSchedulerKey: |-
 $(util::misc::indent "$(util::certs::get_scheduler_key)" 2)
 internalIP: "${internal_ip}"
-flannelEtcdEndpoints: "${FLANNELD_ETCD_ENDPOINTS}"
 bootstrapToken: "${SECRET_BOOTSTRAP_TOKEN}"
 hostname: "${NAME}.k8s.euank.com"
 kubeletVersion: 1.11.1
