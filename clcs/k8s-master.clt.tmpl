@@ -149,26 +149,6 @@ storage:
       inline: |-
         {{ .bootstrapToken }},kubelet-bootstrap,10001,system:kubelet-bootstrap
   - filesystem: root
-    path: /etc/flannel/options.env
-    mode: 420
-    contents:
-      inline: |-
-        FLANNELD_IFACE={{ .internalIP }}
-        FLANNELD_ETCD_ENDPOINTS={{ .flannelEtcdEndpoints }}
-  - filesystem: root
-    path: /etc/kubernetes/cni/net.d/10-flannel.conf
-    mode: 420
-    contents:
-      inline: |-
-        {
-          "name": "cniflannel",
-          "type": "flannel",
-          "delegate": {
-            "isDefaultGateway": true,
-            "hairpinMode": true
-          }
-        }
-  - filesystem: root
     path: /etc/kubernetes/manifests/kube-scheduler.yaml
     mode: 420
     contents:
@@ -236,7 +216,7 @@ storage:
             - apiserver
             - --anonymous-auth=false
             - --bind-address=0.0.0.0
-            - --etcd-servers=http://192.168.131.3:2379,http://192.168.131.4:2379,http://192.168.131.5:2379
+            - --etcd-servers=http://192.168.131.3:2379
             - --allow-privileged=true
             - --authorization-mode=RBAC
             - --service-cluster-ip-range=10.3.0.0/24
@@ -422,21 +402,11 @@ storage:
 systemd:
   units:
   - name: flanneld.service
-    enable: true
-    dropins:
-    - name: 10-options.conf
-      contents: |-
-        [Service]
-        ExecStartPre=/usr/bin/ln -sf /etc/flannel/options.env /run/flannel/options.env
+    mask: true
   - name: rkt-gc.timer
     mask: true
   - name: docker.service
     enable: true
-    dropins:
-    - name: 40-after-flannel.conf
-      contents: |-
-        [Unit]
-        After=flanneld.service
   - name: kubelet.service
     enable: true
     contents: |-
@@ -447,12 +417,12 @@ systemd:
         --kubeconfig=/etc/kubernetes/kubeconfig \
         --address={{ .internalIP }} \
         --node-ip={{ .internalIP }} \
+        --cloud-provider="" \
         --read-only-port=0 \
         --network-plugin=cni \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         --cni-bin-dir=/opt/cni \
         --register-with-taints=node-role.kubernetes.io/master=true:NoSchedule \
-        --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
         --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
         --cert-dir=/etc/kubernetes/ssl \
