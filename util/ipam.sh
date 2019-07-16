@@ -47,7 +47,7 @@ function ipam::get_internal_ip() {
 
   while true; do
     local candidate=$(($RANDOM % 254 + 1))
-    if ! $(grep $candidate <<< "${used_suffixes}"); then
+    if ! grep "$candidate" <<< "${used_suffixes}"&>/dev/null; then
       echo "${prefix}${candidate}"
       return 0
     fi
