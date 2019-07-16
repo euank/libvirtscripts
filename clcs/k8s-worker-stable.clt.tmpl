@@ -64,7 +64,10 @@ storage:
         -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
         -A INPUT -p tcp -m tcp --dport 222 -j ACCEPT
         -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+        # matrix
         -A INPUT -p tcp -m tcp --dport 8448 -j ACCEPT
+        # syncplay
+        -A INPUT -p tcp -m tcp --dport 8999 -j ACCEPT
         -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
         -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
         -A FORWARD -i cni0 -j ACCEPT
@@ -86,7 +89,10 @@ storage:
         -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
         -A INPUT -p tcp -m tcp --dport 222 -j ACCEPT
         -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+        # matrix
         -A INPUT -p tcp -m tcp --dport 8448 -j ACCEPT
+        # syncplay
+        -A INPUT -p tcp -m tcp --dport 8999 -j ACCEPT
         -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
         -A INPUT -p ipv6-icmp -j ACCEPT
         -A FORWARD -i cni0 -j ACCEPT
