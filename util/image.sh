@@ -76,3 +76,9 @@ function image::latest_coreos_stable_path() {
   local stable=$(image::latest_coreos_stable)
   image::coreos_path "stable" "$stable"
 }
+
+function image::update() {
+	local image="$image"
+	local parts=(${image//\// })
+	image::update_"${parts[0]}"_image "${parts[@]:1}"
+}
